@@ -18,28 +18,37 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max per file
 });
 
-// Nodemailer transporter
+// Nodemailer transporter (timeouts so Render doesn't hang forever)
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.EMAIL_USERNAME,
     pass: process.env.EMAIL_PASS,
   },
+  connectionTimeout: 15000,
+  greetingTimeout: 10000,
 });
 
 /**
  * POST /api/send-email
- * Body (multipart/form-data): to, subject, body, and file(s) with field name "attachment" or "document"
- * Body (application/json): to, subject, body, and optional attachment: { filename, content (base64) }
+ * Required: to (single email or array).
+ * Optional: subject, body (text/HTML), attachment/document.
  */
 app.post('/api/send-email', upload.any(), async (req, res) => {
   try {
-    const { to, subject, body, attachment: jsonAttachment } = req.body;
+    if (!process.env.EMAIL_USERNAME || !process.env.EMAIL_PASS) {
+      return res.status(503).json({
+        success: false,
+        error: 'Email service not configured. Set EMAIL_USERNAME and EMAIL_PASS on the server.',
+      });
+    }
 
-    if (!to || !subject || !body) {
+    const { to, subject, body, attachment: jsonAttachment } = req.body || {};
+
+    if (!to) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: to, subject, and body are required.',
+        error: 'Missing required field: to (at least one recipient email).',
       });
     }
 
@@ -57,15 +66,18 @@ app.post('/api/send-email', upload.any(), async (req, res) => {
       });
     }
 
-    // Detect if body is HTML (simple heuristic: contains tags)
-    const isHtml = /<[a-z][\s\S]*>/i.test(body);
+    const subjectStr = subject != null ? String(subject).trim() : '';
+    const bodyStr = body != null ? String(body) : '';
 
     const mailOptions = {
       from: process.env.EMAIL_FROM || process.env.EMAIL_USERNAME,
       to: recipients,
-      subject: subject.trim(),
-      [isHtml ? 'html' : 'text']: body,
+      subject: subjectStr,
     };
+    if (bodyStr) {
+      const isHtml = /<[a-z][\s\S]*>/i.test(bodyStr);
+      mailOptions[isHtml ? 'html' : 'text'] = bodyStr;
+    }
 
     // Attachments: from multipart upload (req.files) or from JSON (base64)
     const attachments = [];
@@ -87,14 +99,18 @@ app.post('/api/send-email', upload.any(), async (req, res) => {
     }
     if (attachments.length > 0) mailOptions.attachments = attachments;
 
-    const info = await transporter.sendMail(mailOptions);
-
-    res.status(200).json({
+    // Respond immediately so we don't timeout on Render (Gmail SMTP from their network can hang)
+    res.status(202).json({
       success: true,
-      message: 'Email sent successfully.',
-      messageId: info.messageId,
-      accepted: info.accepted,
-      rejected: info.rejected || [],
+      message: 'Email accepted for delivery. It is being sent in the background.',
+      to: recipients,
+    });
+
+    // Send in background; log errors (client already got 202)
+    transporter.sendMail(mailOptions).then((info) => {
+      console.log('Email sent:', info.messageId, info.accepted);
+    }).catch((err) => {
+      console.error('Background send failed:', err.message, err.code || '', err.response || '');
     });
   } catch (err) {
     console.error('Send email error:', err);
@@ -119,4 +135,7 @@ app.get('/health', (req, res) => {
 app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`Email API running on port ${PORT}`);
   console.log(`Send email: POST http://localhost:${PORT}/api/send-email`);
+  if (!process.env.EMAIL_USERNAME || !process.env.EMAIL_PASS) {
+    console.warn('WARNING: EMAIL_USERNAME or EMAIL_PASS not set. /api/send-email will return 503 until configured.');
+  }
 });

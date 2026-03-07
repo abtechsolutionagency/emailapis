@@ -24,15 +24,15 @@ Copy `.env.example` to `.env` and fill in your values. For Gmail, use an [App Pa
 - **Build command:** `npm install`
 - **Start command:** `npm start`
 - **Environment:** Add `EMAIL_USERNAME`, `EMAIL_FROM`, `EMAIL_PASS` in the Render dashboard (do not set `PORT`; Render sets it automatically).
-- The app listens on `0.0.0.0` and exposes `/` and `/health` so Render’s health check can succeed. If you still see timeouts, check the **Logs** tab for errors and ensure the service type is **Web Service**, not Background Worker.
+- The app listens on `0.0.0.0` and exposes `/` and `/health` so Render’s health check can succeed. If you still see timeouts, check the **Logs** tab for errors and ensure the service type is **Web Service**, not Background Worker. The API returns **202 Accepted** and sends email in the background to avoid timeouts; check **Logs** for "Email sent" or "Background send failed".
 
 ## Request body
 
 | Field      | Type              | Required | Description |
 |-----------|-------------------|----------|-------------|
 | `to`      | string or array   | Yes      | Single email, comma-separated string, or array of emails |
-| `subject` | string            | Yes      | Email subject |
-| `body`    | string            | Yes      | HTML or plain text body |
+| `subject` | string            | No       | Email subject (can be empty) |
+| `body`    | string            | No       | HTML or plain text body |
 | `attachment` / `document` | file(s) or JSON | No | File(s) in multipart, or `{ filename, content }` (base64) in JSON |
 
 ## Postman
