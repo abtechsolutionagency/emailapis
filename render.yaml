@@ -1,0 +1,16 @@
+# Render Blueprint - optional; you can also configure in Dashboard
+services:
+  - type: web
+    name: email-api
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: EMAIL_USERNAME
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: EMAIL_PASS
+        sync: false

@@ -19,6 +19,13 @@ Node.js API using Express and Nodemailer to send emails. CORS is enabled for all
 
 Copy `.env.example` to `.env` and fill in your values. For Gmail, use an [App Password](https://support.google.com/accounts/answer/185833), not your normal password.
 
+### Deploy on Render
+
+- **Build command:** `npm install`
+- **Start command:** `npm start`
+- **Environment:** Add `EMAIL_USERNAME`, `EMAIL_FROM`, `EMAIL_PASS` in the Render dashboard (do not set `PORT`; Render sets it automatically).
+- The app listens on `0.0.0.0` and exposes `/` and `/health` so Render’s health check can succeed. If you still see timeouts, check the **Logs** tab for errors and ensure the service type is **Web Service**, not Background Worker.
+
 ## Request body
 
 | Field      | Type              | Required | Description |

@@ -3,8 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const nodemailer = require('nodemailer');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -107,12 +105,18 @@ app.post('/api/send-email', upload.any(), async (req, res) => {
   }
 });
 
+// Root (for Render / load balancer health checks)
+app.get('/', (req, res) => {
+  res.json({ service: 'Email API', docs: '/api/send-email (POST)', health: '/health' });
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.listen(PORT, () => {
-  console.log(`Email API running at http://localhost:${PORT}`);
+// Bind to 0.0.0.0 so Render (and other hosts) can reach the server
+app.listen(Number(PORT), '0.0.0.0', () => {
+  console.log(`Email API running on port ${PORT}`);
   console.log(`Send email: POST http://localhost:${PORT}/api/send-email`);
 });
