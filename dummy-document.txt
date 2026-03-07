@@ -1,0 +1,10 @@
+Dummy Document
+==============
+
+This is a sample attachment for testing the Email API.
+
+- Sent via Express + Nodemailer
+- Supports multiple recipients
+- Supports HTML or plain text body
+
+Date: 2025-03-07

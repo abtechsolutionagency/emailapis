@@ -1,0 +1,44 @@
+{
+  "info": {
+    "name": "Email API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Send email (multiple recipients + document)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "to", "value": "recipient1@example.com,recipient2@example.com", "type": "text", "description": "Single or comma-separated emails" },
+            { "key": "subject", "value": "Test from Postman", "type": "text" },
+            { "key": "body", "value": "Hi everyone,\n\nThis is a dummy email body with a document attached.\n\nBest regards", "type": "text", "description": "Plain text or HTML" },
+            { "key": "document", "value": "", "type": "file", "src": [], "description": "Select a file to attach" }
+          ]
+        },
+        "url": "http://localhost:3000/api/send-email"
+      }
+    },
+    {
+      "name": "Send email (JSON, no attachment)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"to\": [\"recipient1@example.com\", \"recipient2@example.com\"],\n  \"subject\": \"Test from Postman\",\n  \"body\": \"<p>Hi everyone,</p><p>This is HTML body.</p>\"\n}"
+        },
+        "url": "http://localhost:3000/api/send-email"
+      }
+    },
+    {
+      "name": "Health check",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/health"
+      }
+    }
+  ]
+}
